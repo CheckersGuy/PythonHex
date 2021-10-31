@@ -18,12 +18,12 @@ if __name__ == '__main__':
     search = Search()
     for k in range(121):
         start = time.time()
-        t = 360000 if search.board.mover == -1 else 360000
+        t = 20000 if search.board.mover == -1 else 20000
         search.max_time = t
-        Node.use_rave = False if search.board.mover == 1 else True
+        Node.use_rave = False if search.board.mover == -1 else True
         search.search()
         end = time.time()
-        # print("Time taken: ", end - start)
+        print("Time taken: ", end - start)
         if search.board.get_winner() != 0:
             total_winner += search.board.get_winner()
             print("Winner ", total_winner)

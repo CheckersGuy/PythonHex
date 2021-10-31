@@ -20,20 +20,21 @@ class Node:
         return max(self.children.values(), key=lambda node: node.num_visits)
 
     def value(self):
+
+        if self.num_visits == 0:
+            return math.inf
+
         q_value = lambda x: (x.results / x.num_visits)
         uct_pol = lambda x: (math.sqrt(2.0 * (math.log(self.num_visits) / x.num_visits)))
-        rave_b = lambda x: (math.sqrt(1000/(3*self.num_visits+1000)))
+        rave_b = lambda x: (math.sqrt(2000 / (3 * self.num_visits + 2000)))
         rave_value = lambda x: (x.qRave / (1.0 + x.nRave))
         rave_combined = lambda x: ((1.0 - rave_b(x)) * q_value(x) + rave_b(x) * rave_value(x))
         uct = lambda x: (q_value(x) + uct_pol(x))
 
-        if self.num_visits == 0:
-            return math.inf
+        if Node.use_rave:
+            return rave_combined(self)
         else:
-            if Node.use_rave:
-                return rave_combined(self)
-            else:
-                return uct(self)
+            return uct(self)
 
     def make_terminal(self, result):
         self.results = result
@@ -49,6 +50,12 @@ class Node:
     def update(self, value):
         self.results += value
         self.num_visits += 1
+
+    def is_loss(self):
+        return self.is_terminal and self.results == -1.0
+
+    def is_win(self):
+        return self.is_terminal and self.results == 1.0
 
     def back_up(self, result, white_stones, black_stones, turn):
         node = self

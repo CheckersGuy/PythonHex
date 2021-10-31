@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-import enum
 import array
 
 
@@ -10,8 +8,8 @@ class Union:
     EAST = 124
 
     def __init__(self):
-        self.indices = [i for i in range(121 + 4)]
-        self.sizes = [1 for i in range(121 + 4)]
+        self.indices = array.array("I", [i for i in range(121 + 4)])
+        self.sizes = array.array("I", [1 for i in range(121 + 4)])
 
     def root(self, idx):
         # finds the root of the element

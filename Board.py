@@ -13,7 +13,7 @@ class Board:
 
     def __init__(self):
         self.squares = [0 for i in range(121)]
-        self.mover = -1
+        self.mover = -1.0
         self.union = Union()
         self.num_empty = 121
 
@@ -42,11 +42,11 @@ class Board:
         else:
             return 0
 
-    def play_out(self):
-        white_stones = []
-        black_stones = []
-        winner = 0
-        for i in range(self.get_num_empty()):
+    def play_out(self,white_stones,black_stones):
+        while True:
+            winner = self.get_winner()
+            if winner != 0:
+                return winner
             indices = [i for i, x in enumerate(self.squares) if x == 0]
             index = random.choice(indices)
             if self.mover == -1:
@@ -54,11 +54,6 @@ class Board:
             else:
                 white_stones.append(index)
             self.make_move(index)
-            winner = self.get_winner()
-            if winner != 0:
-                return white_stones,black_stones,winner
-        # the game always ends in a win or a loss so we should never return 0 here
-        return white_stones, black_stones, winner
 
     def make_move(self, idx):
         self.squares[idx] = self.mover
