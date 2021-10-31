@@ -3,13 +3,14 @@ from Board import Board
 import copy
 import math
 import time
+import random
 
 
 class Search:
 
     def __init__(self):
-        self.max_nodes = 1000
-        self.max_time = None
+        self.max_nodes = math.inf
+        self.max_time = math.inf
         self.root = Node()
         self.board = Board()
         self.use_rave = 0
@@ -22,36 +23,28 @@ class Search:
         self.root = Node()
 
     def iterate(self):
-        visited = []
         iter_board = copy.deepcopy(self.board)
         current = self.root
-        visited.append(current)
-        while not current.has_actions(iter_board):
-            max_key = current.select()
-            current = current.children[max_key]
-            visited.append(current)
+        while len(current.children) != 0:
+            max_value = max(current.children.values(), key=lambda node: node.value()).value()
+            max_values = [node for node in current.children.values() if node.value() == max_value]
+            current = random.choice(max_values)
             iter_board.make_move(current.move)
 
-        key = current.expand(iter_board)
-        current = current.children[key]
+        current.expand(iter_board)
+        current = random.choice(list(current.children.values()))
         iter_board.make_move(current.move)
-        visited.append(current)
 
         mover = iter_board.mover
-        roll_value = -mover * iter_board.play_out()
-        for visit in reversed(visited):
-            visit.num_visits += 1
-            visit.results += roll_value
-            roll_value = -roll_value
+        white_stones, black_stones, result = iter_board.play_out()
+        current.back_up(result, white_stones, black_stones, mover)
 
     def search(self):
         iter_count = 0
-        if self.max_time is not None:
-            self.max_nodes = 1000000000
         start = time.time_ns()
         while iter_count < self.max_nodes:
             self.iterate()
             iter_count += 1
             end = time.time_ns()
-            if self.max_time * 1000000 <= (end - start):
+            if self.max_time*1000000 <= (end - start):
                 break

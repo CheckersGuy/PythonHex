@@ -4,7 +4,6 @@ import random
 
 
 class Node:
-
     use_rave = False
 
     def __init__(self):
@@ -13,29 +12,28 @@ class Node:
         self.results = 0
         self.children = {}
         self.move = -1
+        self.qRave = 0
+        self.nRave = 0
         self.is_terminal = False
 
     def best_child(self):
-        max_value = -math.inf
-        max_key = -1
-        for key, node in self.children.items():
-            val = node.num_visits
-            if val > max_value:
-                max_value = val
-                max_key = key
-        return self.children[max_key]
+        return max(self.children.values(), key=lambda node: node.num_visits)
 
-    def select(self):
-        uct = lambda x: (x.results / x.num_visits) + math.sqrt(2 * (math.log(self.num_visits) / x.num_visits))
+    def value(self):
+        q_value = lambda x: (x.results / x.num_visits)
+        uct_pol = lambda x: (math.sqrt(2.0 * (math.log(self.num_visits) / x.num_visits)))
+        rave_b = lambda x: (math.sqrt(1000/(3*self.num_visits+1000)))
+        rave_value = lambda x: (x.qRave / (1.0 + x.nRave))
+        rave_combined = lambda x: ((1.0 - rave_b(x)) * q_value(x) + rave_b(x) * rave_value(x))
+        uct = lambda x: (q_value(x) + uct_pol(x))
 
-        max_value = -math.inf
-        max_key = -1
-        for key, node in self.children.items():
-            val = uct(node)
-            if val > max_value:
-                max_value = val
-                max_key = key
-        return max_key
+        if self.num_visits == 0:
+            return math.inf
+        else:
+            if Node.use_rave:
+                return rave_combined(self)
+            else:
+                return uct(self)
 
     def make_terminal(self, result):
         self.results = result
@@ -52,34 +50,42 @@ class Node:
         self.results += value
         self.num_visits += 1
 
-    def back_up(self,result):
+    def back_up(self, result, white_stones, black_stones, turn):
         node = self
+        reward = -1 if result == turn else 1
         while node is not None:
-            node.update(result)
-            result = -result
+            if node.parent is not None:
+                if turn == 1:
+                    for stone in white_stones:
+                        if stone in node.children:
+                            curr: Node = node.parent.children[stone]
+                            curr.qRave += -reward
+                            curr.nRave += 1
+                else:
+                    for stone in black_stones:
+                        if stone in node.children:
+                            curr: Node = node.parent.children[stone]
+                            curr.qRave += -reward
+                            curr.nRave += 1
 
+            node.update(reward)
+            node = node.parent
+            turn = -turn
+            reward = -reward
 
     # adds a new node the list of children
     # new node is at the end of our list
     def expand(self, board: Board):
-        empt_squares = board.get_empty_list()
-        num_opt = self.num_avail_actions(board)
-        rand_index = random.randrange(num_opt)
-        counter = 0
-
-        for sq in empt_squares:
-            if sq in self.children:
-                continue
-            if counter == rand_index:
-                node = Node()
-                node.move = sq
-                self.children[sq] = node
-                return sq
-            counter += 1
+        empt_indices = [index for index, sq in enumerate(board.squares) if sq == 0]
+        for sq in empt_indices:
+            node = Node()
+            node.move = sq
+            node.parent = self
+            self.children[sq] = node
 
     def __repr__(self):
         s = ""
-        for child in self.children.values():
+        for child in self.children:
             t = (child.move, child.num_visits, child.results, child.is_terminal)
             s += str(t)
             s += "\n"

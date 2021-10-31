@@ -43,16 +43,22 @@ class Board:
             return 0
 
     def play_out(self):
+        white_stones = []
+        black_stones = []
         winner = 0
         for i in range(self.get_num_empty()):
             indices = [i for i, x in enumerate(self.squares) if x == 0]
             index = random.choice(indices)
+            if self.mover == -1:
+                black_stones.append(index)
+            else:
+                white_stones.append(index)
             self.make_move(index)
             winner = self.get_winner()
             if winner != 0:
-                return winner
+                return white_stones,black_stones,winner
         # the game always ends in a win or a loss so we should never return 0 here
-        return winner
+        return white_stones, black_stones, winner
 
     def make_move(self, idx):
         self.squares[idx] = self.mover
