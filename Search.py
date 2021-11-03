@@ -25,29 +25,19 @@ class Search:
     def iterate(self):
         iter_board = copy.deepcopy(self.board)
         current = self.root
-        while len(current.children) != 0 and not current.is_terminal:
+        while len(current.children) != 0:
             max_value = max(current.children.values(), key=lambda node: node.value()).value()
             max_values = [node for node in current.children.values() if node.value() == max_value]
             current: Node = random.choice(max_values)
             iter_board.make_move(current.move)
-            winner = iter_board.get_winner()
-            if winner != 0 and Node.use_rave:
-                current.make_terminal = True
 
-        # expand if there are moves left
-        white_stones = []
-        black_stones = []
         if iter_board.num_empty != 0:
             current.expand(iter_board)
             current = random.choice(list(current.children.values()))
-            if iter_board.mover == -1:
-                black_stones.append(current.move)
-            else:
-                white_stones.append(current.move)
             iter_board.make_move(current.move)
 
         mover = iter_board.mover
-        result = iter_board.play_out(white_stones,black_stones)
+        white_stones, black_stones, result = iter_board.play_out()
         current.back_up(result, white_stones, black_stones, mover)
 
     def search(self):

@@ -24,11 +24,15 @@ class Node:
         if self.num_visits == 0:
             return math.inf
 
+        bias = 0.001
+        parent: Node = self.parent
+        parent_visits = parent.num_visits
+        test = lambda x: (x.nRave / (x.nRave + x.num_visits + bias * x.nRave * x.num_visits))
         q_value = lambda x: (x.results / x.num_visits)
-        uct_pol = lambda x: (math.sqrt(2.0 * (math.log(self.num_visits) / x.num_visits)))
-        rave_b = lambda x: (math.sqrt(2000 / (3 * self.num_visits + 2000)))
-        rave_value = lambda x: (x.qRave / (1.0 + x.nRave))
-        rave_combined = lambda x: ((1.0 - rave_b(x)) * q_value(x) + rave_b(x) * rave_value(x))
+        uct_pol = lambda x: (2.4 * math.sqrt((math.log(parent_visits) / x.num_visits)))
+        rave_b = lambda x: (math.sqrt(1000.0 / (3.0 * x.num_visits + 1000.0)))
+        rave_value = lambda x: (x.qRave / x.nRave)
+        rave_combined = lambda x: ((1.0 - test(x)) * q_value(x) + test(x) * rave_value(x))
         uct = lambda x: (q_value(x) + uct_pol(x))
 
         if Node.use_rave:
@@ -61,21 +65,21 @@ class Node:
         node = self
         reward = -1 if result == turn else 1
         while node is not None:
-            if node.parent is not None:
-                if turn == 1:
-                    for stone in white_stones:
-                        if stone in node.children:
-                            curr: Node = node.parent.children[stone]
-                            curr.qRave += -reward
-                            curr.nRave += 1
-                else:
-                    for stone in black_stones:
-                        if stone in node.children:
-                            curr: Node = node.parent.children[stone]
-                            curr.qRave += -reward
-                            curr.nRave += 1
+            if turn == 1:
+                for stone in white_stones:
+                    if stone in node.children:
+                        curr: Node = node.children[stone]
+                        curr.qRave += -reward
+                        curr.nRave += 1
+            else:
+                for stone in black_stones:
+                    if stone in node.children:
+                        curr: Node = node.children[stone]
+                        curr.qRave += -reward
+                        curr.nRave += 1
 
-            node.update(reward)
+            node.num_visits += 1
+            node.results += reward
             node = node.parent
             turn = -turn
             reward = -reward

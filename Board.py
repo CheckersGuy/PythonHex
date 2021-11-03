@@ -18,7 +18,6 @@ class Board:
         self.num_empty = 121
 
     def add_to_union(self, hex_point):
-        neigh = self.get_neighbours(hex_point)
         if self.mover == -1 and Union.is_north_edge(hex_point):
             self.union.merge(Union.NORTH, hex_point)
 
@@ -30,6 +29,8 @@ class Board:
 
         if self.mover == 1 and Union.is_east_edge(hex_point):
             self.union.merge(Union.EAST, hex_point)
+
+        neigh = self.get_neighbours(hex_point)
         for sq in neigh:
             if self.squares[sq] == self.mover:
                 self.union.merge(sq, hex_point)
@@ -42,20 +43,23 @@ class Board:
         else:
             return 0
 
-    def play_out(self,white_stones,black_stones):
-        while True:
-            winner = self.get_winner()
-            if winner != 0:
-                return winner
-            indices = [i for i, x in enumerate(self.squares) if x == 0]
-            index = random.choice(indices)
-            if self.mover == -1:
+    def play_out(self):
+        white_stones = []
+        black_stones = []
+        moves = [i for i, x in enumerate(self.squares) if x == 0]
+        while self.get_winner() == 0:
+            index = random.choice(moves)
+            moves.remove(index)
+            self.make_move(index)
+
+        for index, sq in enumerate(self.squares):
+            if sq == -1:
                 black_stones.append(index)
             else:
                 white_stones.append(index)
-            self.make_move(index)
+        return white_stones, black_stones, self.get_winner()
 
-    def make_move(self, idx):
+    def make_move(self, idx: int):
         self.squares[idx] = self.mover
         self.add_to_union(idx)
         self.mover = -self.mover
@@ -89,6 +93,8 @@ class Board:
                 liste.append(hex_point - 10)
 
         return liste
+
+
 
     def __repr__(self):
         r = ""
