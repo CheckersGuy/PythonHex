@@ -3,6 +3,8 @@ from Board import *
 import time
 from Node import *
 from Search import Search
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Press the green button in the gutter to run the script.
 
@@ -13,21 +15,28 @@ from Search import Search
 # search.iterate()
 # search.iterate()
 # print("Visits: ", search.num_visits())
+#some commment
+
 if __name__ == '__main__':
-    total_winner = 0
+    white_wins = 0
+    black_wins = 0
     for p in range(100):
         search = Search()
+        rand_index = random.choice([index for index, value in enumerate(search.board.squares) if value == 0])
+        search.board.make_move(rand_index)
         print(search.board)
         for k in range(121):
             if search.board.get_winner() != 0:
-                total_winner += search.board.get_winner()
-                print("Winner ", total_winner)
-                # print(search.board)
+                white_wins += 1 if search.board.get_winner() == 1 else 0
+                black_wins += 1 if search.board.get_winner() == -1 else 0
+                print("White Wins:  ", white_wins, " and Black Wins ", black_wins)
                 break
             start = time.time()
-            t = 280000 if search.board.mover == -1 else 280000
+            t = 100 if search.board.mover == 1 else 100
             search.max_time = t
-            Node.use_rave = False if search.board.mover == -1 else True
+            Node.use_rave = True if search.board.mover == 1 else False
+            search.board.save_bridge = False if search.board.mover == 1 else False
+            print("Using save_bridge" if search.board.save_bridge else "Not using save_bridge")
             search.search()
             end = time.time()
             print("Time taken: ", end - start)

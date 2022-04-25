@@ -5,7 +5,6 @@ import random
 
 class Node:
     use_rave = False
-
     def __init__(self):
         self.parent = None
         self.num_visits = 0
@@ -31,7 +30,7 @@ class Node:
         q_value = lambda x: (x.results / x.num_visits)
         uct_pol = lambda x: (2.4 * math.sqrt((math.log(parent_visits) / x.num_visits)))
         rave_b = lambda x: (math.sqrt(1000.0 / (3.0 * x.num_visits + 1000.0)))
-        rave_value = lambda x: (x.qRave / x.nRave)
+        rave_value = lambda x: (x.qRave / (1.0+ x.nRave))
         rave_combined = lambda x: ((1.0 - test(x)) * q_value(x) + test(x) * rave_value(x))
         uct = lambda x: (q_value(x) + uct_pol(x))
 
