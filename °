@@ -1,6 +1,6 @@
 
 import random
-
+from multimethod import multimethod
 
 import string
 
@@ -16,6 +16,7 @@ class Union:
                       padded-1 else 1 for i in range(padded) for j in range(padded)]
 
     def merge(self, x, y):
+        print(f"Merging {x} and {y}")
         self.idx[y] = x
 
     def root(self, x):
@@ -33,15 +34,30 @@ class HexPosition:
 
     def __init__(self, size):
         self.size = size
-        self.padded = size+1
+        self.padded = size+2
         self.mover = -1
         self.pieces = [0 for _ in range(self.padded * self.padded)]
 
-    def make_move(self, x, union: Union):
-        self.pieces[x] = self.mover
+    # x is the index for the board without padding !
+    @multimethod
+    def make_move(self, x: int, union: Union):
+        row = x//self.size
+        col = x % self.size
+
+        padded_row = row+1
+        padded_col = col + 1
+        padded_index = padded_row * self.padded + padded_col
+        self.pieces[padded_index] = self.mover
+        # adding all neighbours to the union
+        neighbours = self.get_neighbours(padded_index, self.mover)
+        for member in neighbours:
+            union.merge(padded_index, member)
         self.mover = -self.mover
 
-    # TODO muss noch angepasst werden
+    @multimethod
+    def make_move(self, i: int, j: int, union: Union):
+        self.make_move(i*self.size + j, union)
+
     def print_position(self, board=None):
         if self.size > 26:
             raise ValueError("Max size is 26 due to alphabet column labels.")
@@ -53,8 +69,8 @@ class HexPosition:
 
         # Create default board state if none provided
         if board is None:
-            board = ['W' if square(i, j) == 1 else 'B' for i in range(
-                self.size) for j in range(self.size)]
+            board = [['W' if square(i, j) == 1 else 'B' if square(i, j) == -1 else '.' for j in range(0,
+                                                                                                      self.padded)] for i in range(0, self.padded)]
 
         # Print top column labels
         indent = ' '*3
@@ -71,16 +87,16 @@ class HexPosition:
         # Print bottom column labels
         print(f"{indent}{'  '.join(columns)}")
 
-    def get_neighbours(self, square):
-        padded = self.size + 1
-        return [square + 1, square - 1, square + padded, square - padded, square - padded + 1, square + padded - 1]
-
-    def get_neighbours(self, index, color):
-        self.size
+    @multimethod
+    def get_neighbours(self, index: int, color: int):
         neighbours = [index-1, index+1, index + self.padded, index -
                       self.padded, index-self.padded+1, index+self.padded-1]
         neighbours = [x for x in neighbours if self.pieces[x] == color]
         return neighbours
+
+    @multimethod
+    def get_neighbours(self, i: int, j: int, color: int):
+        return self.get_neighbours(i*self.size+j, color)
 
     def playout(self):
         empty_squares = [idx for idx, value in enumerate(
@@ -94,4 +110,10 @@ class HexPosition:
 
 if __name__ == "__main__":
     position = HexPosition(13)
+    union = Union(13)
+    position.make_move(3, 3, union)
+    neighbours = position.get_neighbours(0, 0, 0)
+    print(neighbours)
+    for index in neighbours:
+        position.pieces[index] = position.mover
     position.print_position()
